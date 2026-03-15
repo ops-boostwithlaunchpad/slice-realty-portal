@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, DM_Serif_Display } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
+import AuthWrapper from "@/components/AuthWrapper";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -16,7 +16,7 @@ const dmSerifDisplay = DM_Serif_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Slice Properties",
+  title: "Slice Realty",
   description: "Real Estate Agent Portal",
 };
 
@@ -31,12 +31,7 @@ export default function RootLayout({
         className={`${dmSans.variable} ${dmSerifDisplay.variable} antialiased`}
         style={{ colorScheme: "light" }}
       >
-        <div className="flex h-screen overflow-hidden bg-white">
-          <Sidebar />
-          <main className="flex-1 overflow-y-auto bg-gray-50">
-            {children}
-          </main>
-        </div>
+        <AuthWrapper>{children}</AuthWrapper>
       </body>
     </html>
   );

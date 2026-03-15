@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import {
   LayoutDashboard,
@@ -12,6 +12,7 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  LogOut,
 } from 'lucide-react'
 
 const navItems = [
@@ -24,7 +25,13 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
+
+  const handleLogout = () => {
+    localStorage.removeItem('slice_auth')
+    router.replace('/login')
+  }
 
   return (
     <aside
@@ -113,11 +120,30 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      {!collapsed && (
-        <div className="px-4 py-3 border-t border-gray-100">
-          <p className="text-xs text-gray-300">Slice Realty &copy; 2026</p>
-        </div>
-      )}
+      <div className="px-2 py-3 border-t border-gray-100">
+        <button
+          onClick={handleLogout}
+          title={collapsed ? 'Sign Out' : undefined}
+          className="flex items-center rounded-lg text-sm font-medium w-full transition-colors"
+          style={{
+            gap: collapsed ? 0 : '10px',
+            padding: collapsed ? '9px 0' : '9px 10px',
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            color: '#9CA3AF',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#FFF0F0'
+            e.currentTarget.style.color = '#C41E2A'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent'
+            e.currentTarget.style.color = '#9CA3AF'
+          }}
+        >
+          <LogOut size={17} />
+          {!collapsed && <span>Sign Out</span>}
+        </button>
+      </div>
     </aside>
   )
 }
