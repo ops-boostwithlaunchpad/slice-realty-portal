@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useState } from 'react'
 import { Listing } from '@/lib/types'
 import { DUMMY_LISTINGS } from '@/lib/dummy'
 import { X } from 'lucide-react'
@@ -62,7 +61,7 @@ function ListingModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.address.trim()) {
       setError('Address is required')
@@ -70,31 +69,7 @@ function ListingModal({
     }
     setLoading(true)
     setError('')
-
-    const payload = {
-      address: form.address.trim(),
-      price: form.price ? parseFloat(form.price) : null,
-      beds: form.beds ? parseInt(form.beds) : null,
-      baths: form.baths ? parseFloat(form.baths) : null,
-      sqft: form.sqft ? parseInt(form.sqft) : null,
-      status: form.status,
-      agent_name: form.agent_name || null,
-      photo_url: form.photo_url || null,
-    }
-
-    let error
-    if (listing) {
-      ;({ error } = await supabase.from('listings').update(payload).eq('id', listing.id))
-    } else {
-      ;({ error } = await supabase.from('listings').insert(payload))
-    }
-
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
-    }
-
+    // Demo mode: just close the modal
     setLoading(false)
     onSaved()
     onClose()
@@ -311,23 +286,11 @@ function ListingCard({
 }
 
 export default function ListingsPage() {
-  const [listings, setListings] = useState<Listing[]>(DUMMY_LISTINGS)
+  const [listings] = useState<Listing[]>(DUMMY_LISTINGS)
   const [showModal, setShowModal] = useState(false)
   const [editListing, setEditListing] = useState<Listing | undefined>()
   const [filter, setFilter] = useState('all')
-  const [loading, setLoading] = useState(false)
-
-  const loadListings = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('listings')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (!error && data && data.length > 0) setListings(data as Listing[])
-  }, [])
-
-  useEffect(() => {
-    loadListings()
-  }, [loadListings])
+  const [loading] = useState(false)
 
   const filtered = filter === 'all' ? listings : listings.filter((l) => l.status === filter)
 
@@ -421,7 +384,7 @@ export default function ListingsPage() {
             setShowModal(false)
             setEditListing(undefined)
           }}
-          onSaved={loadListings}
+          onSaved={() => {}}
         />
       )}
     </div>

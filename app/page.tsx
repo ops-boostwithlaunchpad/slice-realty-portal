@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
-import { supabase } from '@/lib/supabase'
 import { Deal } from '@/lib/types'
 import { DUMMY_DEALS, DUMMY_LISTINGS, DUMMY_CLIENTS } from '@/lib/dummy'
 import { Plus, X, ArrowLeft } from 'lucide-react'
@@ -88,43 +87,10 @@ function AddProspectModal({
     setStep((s) => s + 1)
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     setLoading(true)
     setError('')
-
-    const { data: clientData, error: clientError } = await supabase
-      .from('clients')
-      .insert({
-        name: form.name.trim(),
-        phone: form.phone || null,
-        email: form.email || null,
-        budget_min: form.budget_min ? parseFloat(form.budget_min) : null,
-        budget_max: form.budget_max ? parseFloat(form.budget_max) : null,
-        preferred_areas: form.preferred_areas || null,
-        source: form.source || null,
-        status: 'prospect',
-      })
-      .select()
-      .single()
-
-    if (clientError) {
-      setError(clientError.message)
-      setLoading(false)
-      return
-    }
-
-    const { error: dealError } = await supabase.from('deals').insert({
-      client_id: clientData.id,
-      property_address: form.property_address || null,
-      stage: 'prospect',
-    })
-
-    if (dealError) {
-      setError(dealError.message)
-      setLoading(false)
-      return
-    }
-
+    // Demo mode: just close the modal
     setLoading(false)
     onSuccess()
     onClose()
@@ -366,92 +332,16 @@ export default function DashboardPage() {
   }
   const dummyUpcoming = DUMMY_DEALS.filter((d) => d.stage === 'appointment' && d.appointment_at)
 
-  const [stats, setStats] = useState<Stats>(dummyStats)
-  const [listingsBreakdown, setListingsBreakdown] = useState({
+  const stats = dummyStats
+  const listingsBreakdown = {
     active: DUMMY_LISTINGS.filter((l) => l.status === 'active').length,
     under_contract: DUMMY_LISTINGS.filter((l) => l.status === 'under_contract').length,
     sold: DUMMY_LISTINGS.filter((l) => l.status === 'sold').length,
-  })
-  const [recentDeals, setRecentDeals] = useState<Deal[]>([...DUMMY_DEALS].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()).slice(0, 5))
-  const [upcomingAppointments, setUpcomingAppointments] = useState<Deal[]>(dummyUpcoming)
+  }
+  const recentDeals: Deal[] = [...DUMMY_DEALS].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()).slice(0, 5)
+  const upcomingAppointments: Deal[] = dummyUpcoming
   const [showModal, setShowModal] = useState(false)
-  const [loading, setLoading] = useState(false)
-
-  const loadData = useCallback(async () => {
-    setLoading(true)
-
-    const [
-      prospectsResult,
-      appointmentsResult,
-      pendingResult,
-      soldResult,
-      listingsResult,
-      recentResult,
-    ] = await Promise.all([
-      supabase.from('deals').select('id', { count: 'exact', head: true }).eq('stage', 'prospect'),
-      supabase.from('deals').select('id', { count: 'exact', head: true }).eq('stage', 'appointment'),
-      supabase.from('deals').select('id', { count: 'exact', head: true }).eq('stage', 'pending'),
-      supabase.from('deals').select('id', { count: 'exact', head: true }).eq('stage', 'sold'),
-      supabase.from('listings').select('id', { count: 'exact', head: true }),
-      supabase
-        .from('deals')
-        .select('*, clients(name)')
-        .order('updated_at', { ascending: false })
-        .limit(5),
-    ])
-
-    const realStats = {
-      prospects: prospectsResult.count ?? 0,
-      appointments: appointmentsResult.count ?? 0,
-      pending: pendingResult.count ?? 0,
-      sold: soldResult.count ?? 0,
-      listings: listingsResult.count ?? 0,
-    }
-    const totalDeals = realStats.prospects + realStats.appointments + realStats.pending + realStats.sold
-    if (totalDeals > 0 || realStats.listings > 0) {
-      setStats(realStats)
-    }
-
-    if (recentResult.data && recentResult.data.length > 0) {
-      setRecentDeals(recentResult.data as Deal[])
-    }
-
-    const now = new Date()
-    const weekEnd = new Date(now)
-    weekEnd.setDate(weekEnd.getDate() + 7)
-
-    const { data: apptData } = await supabase
-      .from('deals')
-      .select('*, clients(name)')
-      .eq('stage', 'appointment')
-      .gte('appointment_at', now.toISOString())
-      .lte('appointment_at', weekEnd.toISOString())
-      .order('appointment_at', { ascending: true })
-
-    if (apptData && apptData.length > 0) {
-      setUpcomingAppointments(apptData as Deal[])
-    }
-
-    const [activeCount, underContractCount, soldListingsCount] = await Promise.all([
-      supabase.from('listings').select('id', { count: 'exact', head: true }).eq('status', 'active'),
-      supabase.from('listings').select('id', { count: 'exact', head: true }).eq('status', 'under_contract'),
-      supabase.from('listings').select('id', { count: 'exact', head: true }).eq('status', 'sold'),
-    ])
-    const totalListings = (activeCount.count ?? 0) + (underContractCount.count ?? 0) + (soldListingsCount.count ?? 0)
-    if (totalListings > 0) {
-      setListingsBreakdown({
-        active: activeCount.count ?? 0,
-        under_contract: underContractCount.count ?? 0,
-        sold: soldListingsCount.count ?? 0,
-      })
-    }
-
-    setLoading(false)
-  }, [])
-
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  const loading = false
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('en-US', {
@@ -507,7 +397,7 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {/* Charts Row */}
+      {/* Row 1: Pipeline Overview (full width) */}
       {(() => {
         const pipelineData = [
           { name: 'Prospects', value: stats.prospects, color: '#3B82F6' },
@@ -515,17 +405,11 @@ export default function DashboardPage() {
           { name: 'Pending', value: stats.pending, color: '#8B5CF6' },
           { name: 'Sold', value: stats.sold, color: '#10B981' },
         ]
-        const donutData = [
-          { name: 'Active', value: listingsBreakdown.active, color: '#10B981' },
-          { name: 'Under Contract', value: listingsBreakdown.under_contract, color: '#F59E0B' },
-          { name: 'Sold', value: listingsBreakdown.sold, color: '#6B7280' },
-        ]
         const cardStyle = { boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)' }
 
         return (
-          <div className="grid grid-cols-5 gap-5 mb-6">
-            {/* Pipeline bar chart */}
-            <div className="col-span-3 bg-white rounded-xl border border-gray-100 p-5" style={cardStyle}>
+          <div className="mb-6">
+            <div className="bg-white rounded-xl border border-gray-100 p-5" style={cardStyle}>
               <h2 className="text-sm font-bold text-gray-800 mb-0.5" style={{ fontFamily: 'var(--font-dm-serif)', fontSize: '1rem' }}>
                 Pipeline Overview
               </h2>
@@ -547,9 +431,50 @@ export default function DashboardPage() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
+          </div>
+        )
+      })()}
 
-            {/* Listings donut */}
-            <div className="col-span-2 bg-white rounded-xl border border-gray-100 p-5" style={cardStyle}>
+      {/* Row 2: Listings Status + Lead Sources + Financial Summary (3 columns) */}
+      {(() => {
+        const donutData = [
+          { name: 'Active', value: listingsBreakdown.active, color: '#10B981' },
+          { name: 'Under Contract', value: listingsBreakdown.under_contract, color: '#F59E0B' },
+          { name: 'Sold', value: listingsBreakdown.sold, color: '#6B7280' },
+        ]
+
+        const sourceMap: Record<string, number> = {}
+        DUMMY_CLIENTS.forEach((c) => {
+          if (c.source) sourceMap[c.source] = (sourceMap[c.source] ?? 0) + 1
+        })
+        const sourceData = Object.entries(sourceMap)
+          .sort((a, b) => b[1] - a[1])
+          .map(([name, value]) => ({ name, value }))
+
+        const cardStyle = { boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)' }
+        const total = sourceData.reduce((s, d) => s + d.value, 0)
+        const barColors = ['#C41E2A', '#F59E0B', '#3B82F6', '#8B5CF6', '#10B981', '#6B7280']
+
+        const soldDeals = DUMMY_DEALS.filter((d) => d.stage === 'sold')
+        const totalCommission = soldDeals.reduce((s, d) => s + (d.commission ?? 0), 0)
+        const totalClosed = soldDeals.reduce((s, d) => s + (d.sale_price ?? 0), 0)
+        const pipelineValue = DUMMY_DEALS.filter((d) => d.stage === 'pending').reduce((s, d) => s + (d.offer_amount ?? 0), 0)
+        const avgSalePrice = soldDeals.length ? totalClosed / soldDeals.length : 0
+
+        const fmt = (n: number) =>
+          n >= 1000000 ? `$${(n / 1000000).toFixed(2)}M` : `$${n.toLocaleString()}`
+
+        const financialStats = [
+          { label: 'Total Closed Sales', value: fmt(totalClosed), accent: '#10B981' },
+          { label: 'Commission Earned', value: fmt(totalCommission), accent: '#C41E2A' },
+          { label: 'Active Pipeline', value: fmt(pipelineValue), accent: '#8B5CF6' },
+          { label: 'Avg. Sale Price', value: fmt(avgSalePrice), accent: '#F59E0B' },
+        ]
+
+        return (
+          <div className="grid grid-cols-3 gap-5 mb-6">
+            {/* Listings Status */}
+            <div className="bg-white rounded-xl border border-gray-100 p-5" style={cardStyle}>
               <h2 className="text-sm font-bold text-gray-800 mb-0.5" style={{ fontFamily: 'var(--font-dm-serif)', fontSize: '1rem' }}>
                 Listings Status
               </h2>
@@ -580,44 +505,9 @@ export default function DashboardPage() {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-          </div>
-        )
-      })()}
 
-      {/* Lead Sources + Financial Summary Row */}
-      {(() => {
-        const sourceMap: Record<string, number> = {}
-        DUMMY_CLIENTS.forEach((c) => {
-          if (c.source) sourceMap[c.source] = (sourceMap[c.source] ?? 0) + 1
-        })
-        const sourceData = Object.entries(sourceMap)
-          .sort((a, b) => b[1] - a[1])
-          .map(([name, value]) => ({ name, value }))
-
-        const cardStyle = { boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)' }
-        const total = sourceData.reduce((s, d) => s + d.value, 0)
-        const barColors = ['#C41E2A', '#F59E0B', '#3B82F6', '#8B5CF6', '#10B981', '#6B7280']
-
-        const soldDeals = DUMMY_DEALS.filter((d) => d.stage === 'sold')
-        const totalCommission = soldDeals.reduce((s, d) => s + (d.commission ?? 0), 0)
-        const totalClosed = soldDeals.reduce((s, d) => s + (d.sale_price ?? 0), 0)
-        const pipelineValue = DUMMY_DEALS.filter((d) => d.stage === 'pending').reduce((s, d) => s + (d.offer_amount ?? 0), 0)
-        const avgSalePrice = soldDeals.length ? totalClosed / soldDeals.length : 0
-
-        const fmt = (n: number) =>
-          n >= 1000000 ? `$${(n / 1000000).toFixed(2)}M` : `$${n.toLocaleString()}`
-
-        const financialStats = [
-          { label: 'Total Closed Sales', value: fmt(totalClosed), accent: '#10B981' },
-          { label: 'Commission Earned', value: fmt(totalCommission), accent: '#C41E2A' },
-          { label: 'Active Pipeline', value: fmt(pipelineValue), accent: '#8B5CF6' },
-          { label: 'Avg. Sale Price', value: fmt(avgSalePrice), accent: '#F59E0B' },
-        ]
-
-        return (
-          <div className="grid grid-cols-5 gap-5 mb-6">
-            {/* Lead Sources — 3/5 */}
-            <div className="col-span-3 bg-white rounded-xl border border-gray-100 p-5" style={cardStyle}>
+            {/* Lead Sources */}
+            <div className="bg-white rounded-xl border border-gray-100 p-5" style={cardStyle}>
               <h2 className="font-bold text-gray-800 mb-0.5" style={{ fontFamily: 'var(--font-dm-serif)', fontSize: '1rem' }}>
                 Lead Sources
               </h2>
@@ -638,8 +528,8 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Financial Summary — 2/5 */}
-            <div className="col-span-2 bg-white rounded-xl border border-gray-100 p-5" style={cardStyle}>
+            {/* Financial Summary */}
+            <div className="bg-white rounded-xl border border-gray-100 p-5" style={cardStyle}>
               <h2 className="font-bold text-gray-800 mb-0.5" style={{ fontFamily: 'var(--font-dm-serif)', fontSize: '1rem' }}>
                 Financial Summary
               </h2>
@@ -761,7 +651,7 @@ export default function DashboardPage() {
       {showModal && (
         <AddProspectModal
           onClose={() => setShowModal(false)}
-          onSuccess={loadData}
+          onSuccess={() => {}}
         />
       )}
     </div>

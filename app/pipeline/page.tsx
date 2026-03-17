@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import {
   DragDropContext,
   Droppable,
   Draggable,
   DropResult,
 } from '@hello-pangea/dnd'
-import { supabase } from '@/lib/supabase'
 import { Deal } from '@/lib/types'
 import { DUMMY_DEALS } from '@/lib/dummy'
 
@@ -92,40 +91,15 @@ function buildBoard(deals: Deal[]): BoardData {
 
 export default function PipelinePage() {
   const [board, setBoard] = useState<BoardData>(buildBoard(DUMMY_DEALS))
-  const [loading, setLoading] = useState(false)
 
-  const loadDeals = useCallback(async () => {
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('deals')
-      .select('*, clients(name)')
-      .order('updated_at', { ascending: false })
-
-    if (error) {
-      console.error('Error loading deals:', error)
-      setLoading(false)
-      return
-    }
-
-    if (data && data.length > 0) {
-      setBoard(buildBoard(data as Deal[]))
-    }
-    setLoading(false)
-  }, [])
-
-  useEffect(() => {
-    loadDeals()
-  }, [loadDeals])
-
-  const onDragEnd = async (result: DropResult) => {
-    const { source, destination, draggableId } = result
+  const onDragEnd = (result: DropResult) => {
+    const { source, destination } = result
     if (!destination) return
     if (source.droppableId === destination.droppableId && source.index === destination.index) return
 
     const sourceStage = source.droppableId
     const destStage = destination.droppableId
 
-    // Optimistic update
     const newBoard = { ...board }
     const sourceItems = Array.from(newBoard[sourceStage])
     const [movedItem] = sourceItems.splice(source.index, 1)
@@ -141,18 +115,6 @@ export default function PipelinePage() {
     }
 
     setBoard(newBoard)
-
-    // Persist to Supabase
-    const { error } = await supabase
-      .from('deals')
-      .update({ stage: destStage, updated_at: new Date().toISOString() })
-      .eq('id', draggableId)
-
-    if (error) {
-      console.error('Failed to update deal stage:', error)
-      // Revert on error
-      loadDeals()
-    }
   }
 
   return (
@@ -170,25 +132,13 @@ export default function PipelinePage() {
         </p>
       </div>
 
-      {loading ? (
-        <div className="flex gap-4 flex-1">
-          {STAGES.map((stage) => (
-            <div
-              key={stage.id}
-              className="flex-1 bg-gray-100 rounded-2xl animate-pulse"
-              style={{ minHeight: 400 }}
-            />
-          ))}
-        </div>
-      ) : (
-        <DragDropContext onDragEnd={onDragEnd}>
+      <DragDropContext onDragEnd={onDragEnd}>
           <div className="flex gap-4 flex-1 overflow-x-auto pb-2">
             {STAGES.map((stage) => (
               <div
                 key={stage.id}
-                className="flex flex-col rounded-2xl flex-shrink-0"
+                className="flex flex-col rounded-2xl flex-1 min-w-[240px]"
                 style={{
-                  width: 260,
                   backgroundColor: '#F8F8F7',
                   border: '1px solid #EBEBEB',
                 }}
@@ -240,7 +190,6 @@ export default function PipelinePage() {
             ))}
           </div>
         </DragDropContext>
-      )}
     </div>
   )
 }

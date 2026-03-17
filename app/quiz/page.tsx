@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useState, useCallback } from 'react'
 import { QuizQuestion } from '@/lib/types'
 import { DUMMY_QUIZ_QUESTIONS } from '@/lib/dummy'
 
@@ -25,29 +24,9 @@ export default function QuizPage() {
   const [finished, setFinished] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  const loadQuestions = useCallback(async () => {
+  const loadQuestions = useCallback(() => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('quiz_questions')
-      .select('*')
-      .order('id')
-      .limit(40)
-
-    if (error) {
-      // use dummy fallback instead of showing error
-      const shuffled = shuffleArray(DUMMY_QUIZ_QUESTIONS).slice(0, 10)
-      setQuestions(shuffled)
-      setCurrent(0)
-      setSelected(null)
-      setAnswered(false)
-      setScore(0)
-      setFinished(false)
-      setLoading(false)
-      return
-    }
-
-    const pool = (data && data.length > 0) ? data as QuizQuestion[] : DUMMY_QUIZ_QUESTIONS
-    const shuffled = shuffleArray(pool).slice(0, 10)
+    const shuffled = shuffleArray(DUMMY_QUIZ_QUESTIONS).slice(0, 10)
     setQuestions(shuffled)
     setCurrent(0)
     setSelected(null)
@@ -57,9 +36,10 @@ export default function QuizPage() {
     setLoading(false)
   }, [])
 
-  useEffect(() => {
+  // Load on mount
+  if (loading && questions.length === 0) {
     loadQuestions()
-  }, [loadQuestions])
+  }
 
   const handleSelect = (index: number) => {
     if (answered) return
@@ -121,7 +101,7 @@ export default function QuizPage() {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-4xl mx-auto">
+      <div className="p-6 max-w-[1600px] mx-auto">
         <div className="h-8 w-48 bg-gray-100 rounded animate-pulse mb-4" />
         <div className="bg-white rounded-2xl border border-gray-100 h-96 animate-pulse" />
       </div>
@@ -131,7 +111,7 @@ export default function QuizPage() {
   if (finished) {
     const grade = getGrade()
     return (
-      <div className="p-6 max-w-4xl mx-auto">
+      <div className="p-6 max-w-[1600px] mx-auto">
         <h1
           className="text-3xl font-bold text-gray-900 mb-7"
           style={{ fontFamily: 'var(--font-dm-serif)' }}
@@ -200,7 +180,7 @@ export default function QuizPage() {
   const progress = ((current + 1) / questions.length) * 100
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-[1600px] mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1
           className="text-3xl font-bold text-gray-900"

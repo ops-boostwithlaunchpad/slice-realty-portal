@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useState, useCallback } from 'react'
 import { Client, FollowUp } from '@/lib/types'
 import { DUMMY_CLIENTS, DUMMY_FOLLOW_UPS } from '@/lib/dummy'
 import { X, Plus } from 'lucide-react'
@@ -40,49 +39,35 @@ function ClientDetailPanel({
   const [savingStatus, setSavingStatus] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  const loadFollowUps = useCallback(async () => {
+  const loadFollowUps = useCallback(() => {
     const dummyFu = DUMMY_FOLLOW_UPS.filter((f) => f.client_id === client.id)
-    if (dummyFu.length > 0) setFollowUps(dummyFu)
-    const { data } = await supabase
-      .from('follow_ups')
-      .select('*')
-      .eq('client_id', client.id)
-      .order('created_at', { ascending: false })
-    if (data && data.length > 0) setFollowUps(data)
+    setFollowUps(dummyFu)
     setLoading(false)
   }, [client.id])
 
-  useEffect(() => {
+  // Load on mount
+  if (loading && followUps.length === 0) {
     loadFollowUps()
-  }, [loadFollowUps])
+  }
 
-  const addFollowUp = async () => {
+  const addFollowUp = () => {
     if (!newNote.trim()) return
     setAddingNote(true)
-    const { data, error } = await supabase
-      .from('follow_ups')
-      .insert({ client_id: client.id, note: newNote.trim() })
-      .select()
-      .single()
-    if (!error && data) {
-      setFollowUps([data, ...followUps])
-      setNewNote('')
+    const newFollowUp: FollowUp = {
+      id: `fu-${Date.now()}`,
+      client_id: client.id,
+      note: newNote.trim(),
+      created_at: new Date().toISOString(),
     }
+    setFollowUps([newFollowUp, ...followUps])
+    setNewNote('')
     setAddingNote(false)
   }
 
-  const updateStatus = async (newStatus: string) => {
+  const updateStatus = (newStatus: string) => {
     setSavingStatus(true)
-    const { data, error } = await supabase
-      .from('clients')
-      .update({ status: newStatus })
-      .eq('id', client.id)
-      .select()
-      .single()
-    if (!error && data) {
-      setStatus(newStatus)
-      onUpdate(data as Client)
-    }
+    setStatus(newStatus)
+    onUpdate({ ...client, status: newStatus })
     setSavingStatus(false)
   }
 
@@ -237,19 +222,7 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>(DUMMY_CLIENTS)
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [search, setSearch] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  const loadClients = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (!error && data && data.length > 0) setClients(data as Client[])
-  }, [])
-
-  useEffect(() => {
-    loadClients()
-  }, [loadClients])
+  const [loading] = useState(false)
 
   const filtered = clients.filter((c) => {
     const q = search.toLowerCase()
