@@ -3,12 +3,13 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { Deal } from '@/lib/types'
-import { DUMMY_DEALS, DUMMY_LISTINGS, DUMMY_CLIENTS } from '@/lib/dummy'
+import { DUMMY_DEALS, DUMMY_LISTINGS, DUMMY_CLIENTS, DUMMY_AGENTS } from '@/lib/dummy'
 import { Plus, X, ArrowLeft } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   PieChart, Pie, Legend,
 } from 'recharts'
+import { useRole } from '@/lib/auth'
 
 interface Stats {
   prospects: number
@@ -322,7 +323,243 @@ function AddProspectModal({
   )
 }
 
+function ManagerDashboard() {
+  const activeAgents = DUMMY_AGENTS.filter((a) => a.status === 'active')
+  const totalDeals = DUMMY_AGENTS.reduce((s, a) => s + a.deals_closed, 0)
+  const totalVolume = DUMMY_AGENTS.reduce((s, a) => s + a.total_volume, 0)
+  const totalCommission = DUMMY_AGENTS.reduce((s, a) => s + a.commission_earned, 0)
+  const totalClients = DUMMY_AGENTS.reduce((s, a) => s + a.active_clients, 0)
+  const avgDealSize = totalDeals > 0 ? totalVolume / totalDeals : 0
+
+  const fmt = (n: number) =>
+    n >= 1000000 ? `$${(n / 1000000).toFixed(2)}M` : `$${n.toLocaleString()}`
+
+  const pipelineData = [
+    { name: 'Prospects', value: DUMMY_DEALS.filter((d) => d.stage === 'prospect').length, color: '#3B82F6' },
+    { name: 'Appointments', value: DUMMY_DEALS.filter((d) => d.stage === 'appointment').length, color: '#F59E0B' },
+    { name: 'Pending', value: DUMMY_DEALS.filter((d) => d.stage === 'pending').length, color: '#8B5CF6' },
+    { name: 'Sold', value: DUMMY_DEALS.filter((d) => d.stage === 'sold').length, color: '#10B981' },
+  ]
+
+  const agentPerformance = DUMMY_AGENTS
+    .filter((a) => a.status === 'active')
+    .sort((a, b) => b.total_volume - a.total_volume)
+    .map((a) => ({ name: a.name.split(' ')[0], volume: a.total_volume, deals: a.deals_closed }))
+
+  const listingsBreakdown = [
+    { name: 'Active', value: DUMMY_LISTINGS.filter((l) => l.status === 'active').length, color: '#10B981' },
+    { name: 'Under Contract', value: DUMMY_LISTINGS.filter((l) => l.status === 'under_contract').length, color: '#F59E0B' },
+    { name: 'Sold', value: DUMMY_LISTINGS.filter((l) => l.status === 'sold').length, color: '#6B7280' },
+  ]
+
+  const recentDeals: Deal[] = [...DUMMY_DEALS]
+    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+    .slice(0, 5)
+
+  const formatDate = (dateStr: string) =>
+    new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+
+  const stageBadge = (stage: string) => {
+    const map: Record<string, { label: string; color: string; bg: string }> = {
+      prospect: { label: 'Prospect', color: '#2563EB', bg: '#EFF6FF' },
+      appointment: { label: 'Appointment', color: '#D97706', bg: '#FFFBEB' },
+      pending: { label: 'Pending', color: '#7C3AED', bg: '#F5F3FF' },
+      sold: { label: 'Sold', color: '#16A34A', bg: '#F0FDF4' },
+    }
+    const s = map[stage] ?? { label: stage, color: '#6B7280', bg: '#F9FAFB' }
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style={{ color: s.color, backgroundColor: s.bg }}>
+        {s.label}
+      </span>
+    )
+  }
+
+  const cardStyle = { boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)' }
+
+  return (
+    <div className="p-6">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-dm-serif)' }}>
+          Team Dashboard
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        </p>
+      </div>
+
+      {/* Row 1: Key team stats */}
+      <div className="grid grid-cols-5 gap-4 mb-6">
+        {[
+          { label: 'Active Agents', value: activeAgents.length.toString(), accent: '#3B82F6' },
+          { label: 'Total Clients', value: totalClients.toString(), accent: '#F59E0B' },
+          { label: 'Deals Closed', value: totalDeals.toString(), accent: '#10B981' },
+          { label: 'Total Volume', value: fmt(totalVolume), accent: '#8B5CF6' },
+          { label: 'Commission Earned', value: fmt(totalCommission), accent: '#C41E2A' },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className="bg-white rounded-xl border border-gray-100 p-5"
+            style={{ ...cardStyle, borderTop: `3px solid ${stat.accent}` }}
+          >
+            <p className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-dm-serif)' }}>
+              {stat.value}
+            </p>
+            <p className="text-sm text-gray-500">{stat.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Row 2: Pipeline + Agent Performance */}
+      <div className="grid grid-cols-2 gap-5 mb-6">
+        {/* Team Pipeline */}
+        <div className="bg-white rounded-xl border border-gray-100 p-5" style={cardStyle}>
+          <h2 className="text-sm font-bold text-gray-800 mb-0.5" style={{ fontFamily: 'var(--font-dm-serif)', fontSize: '1rem' }}>
+            Team Pipeline
+          </h2>
+          <p className="text-xs text-gray-400 mb-4">All deals across agents</p>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={pipelineData} layout="vertical" margin={{ left: 0, right: 24, top: 0, bottom: 0 }}>
+              <XAxis type="number" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: '#4B5563' }} axisLine={false} tickLine={false} width={90} />
+              <Tooltip cursor={{ fill: '#F9FAFB' }} contentStyle={{ border: '1px solid #F3F4F6', borderRadius: 8, fontSize: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} formatter={(v) => [v, 'Deals']} />
+              <Bar dataKey="value" radius={[0, 6, 6, 0]} maxBarSize={28}>
+                {pipelineData.map((entry, i) => (
+                  <Cell key={i} fill={entry.color} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Agent Performance Comparison */}
+        <div className="bg-white rounded-xl border border-gray-100 p-5" style={cardStyle}>
+          <h2 className="font-bold text-gray-800 mb-0.5" style={{ fontFamily: 'var(--font-dm-serif)', fontSize: '1rem' }}>
+            Agent Performance
+          </h2>
+          <p className="text-xs text-gray-400 mb-4">Volume by agent</p>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={agentPerformance} margin={{ left: 0, right: 24, top: 0, bottom: 0 }}>
+              <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#4B5563' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} tickFormatter={(v) => v >= 1000000 ? `$${(v / 1000000).toFixed(1)}M` : `$${(v / 1000).toFixed(0)}K`} />
+              <Tooltip contentStyle={{ border: '1px solid #F3F4F6', borderRadius: 8, fontSize: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} formatter={(v) => [fmt(v as number), 'Volume']} />
+              <Bar dataKey="volume" radius={[6, 6, 0, 0]} maxBarSize={48} fill="#C41E2A" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Row 3: Listings + Financial + Recent */}
+      <div className="grid grid-cols-3 gap-5 mb-6">
+        {/* Listings Status */}
+        <div className="bg-white rounded-xl border border-gray-100 p-5" style={cardStyle}>
+          <h2 className="text-sm font-bold text-gray-800 mb-0.5" style={{ fontFamily: 'var(--font-dm-serif)', fontSize: '1rem' }}>
+            Listings Status
+          </h2>
+          <p className="text-xs text-gray-400 mb-2">Portfolio breakdown</p>
+          <ResponsiveContainer width="100%" height={180}>
+            <PieChart>
+              <Pie data={listingsBreakdown} cx="50%" cy="45%" innerRadius={48} outerRadius={72} paddingAngle={3} dataKey="value">
+                {listingsBreakdown.map((entry, i) => (
+                  <Cell key={i} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip contentStyle={{ border: '1px solid #F3F4F6', borderRadius: 8, fontSize: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} />
+              <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, paddingTop: 4 }} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Financial Summary */}
+        <div className="bg-white rounded-xl border border-gray-100 p-5" style={cardStyle}>
+          <h2 className="font-bold text-gray-800 mb-0.5" style={{ fontFamily: 'var(--font-dm-serif)', fontSize: '1rem' }}>
+            Financial Summary
+          </h2>
+          <p className="text-xs text-gray-400 mb-4">Team YTD performance</p>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: 'Total Closed', value: fmt(totalVolume), accent: '#10B981' },
+              { label: 'Commission', value: fmt(totalCommission), accent: '#C41E2A' },
+              { label: 'Avg Deal Size', value: fmt(avgDealSize), accent: '#F59E0B' },
+              { label: 'Active Listings', value: DUMMY_LISTINGS.filter((l) => l.status === 'active').length.toString(), accent: '#3B82F6' },
+            ].map((s) => (
+              <div key={s.label} className="rounded-xl p-3" style={{ backgroundColor: '#FAFAFA', borderLeft: `3px solid ${s.accent}` }}>
+                <p className="text-xs text-gray-400 mb-1 leading-tight">{s.label}</p>
+                <p className="text-base font-bold text-gray-900" style={{ fontFamily: 'var(--font-dm-serif)' }}>{s.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Agent Leaderboard */}
+        <div className="bg-white rounded-xl border border-gray-100 p-5" style={cardStyle}>
+          <h2 className="font-bold text-gray-800 mb-0.5" style={{ fontFamily: 'var(--font-dm-serif)', fontSize: '1rem' }}>
+            Agent Leaderboard
+          </h2>
+          <p className="text-xs text-gray-400 mb-4">Top performers by volume</p>
+          <div className="flex flex-col gap-3">
+            {DUMMY_AGENTS
+              .filter((a) => a.status === 'active')
+              .sort((a, b) => b.total_volume - a.total_volume)
+              .map((agent, i) => {
+                const initials = agent.name.split(' ').map((n) => n[0]).join('')
+                const medals = ['#FFD700', '#C0C0C0', '#CD7F32']
+                return (
+                  <div key={agent.id} className="flex items-center gap-3">
+                    <span
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                      style={{ backgroundColor: medals[i] ?? '#C41E2A' }}
+                    >
+                      {initials}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{agent.name}</p>
+                      <p className="text-xs text-gray-400">{agent.deals_closed} deals</p>
+                    </div>
+                    <span className="text-sm font-bold text-gray-700">{fmt(agent.total_volume)}</span>
+                  </div>
+                )
+              })}
+          </div>
+        </div>
+      </div>
+
+      {/* Row 4: Recent Activity */}
+      <div
+        className="bg-white rounded-xl border border-gray-100"
+        style={cardStyle}
+      >
+        <div className="px-5 py-4 border-b border-gray-100">
+          <h2 className="font-semibold text-gray-900" style={{ fontFamily: 'var(--font-dm-serif)', fontSize: '1.05rem' }}>Recent Activity</h2>
+          <p className="text-xs text-gray-500 mt-0.5">Latest deal updates across all agents</p>
+        </div>
+        <div className="divide-y divide-gray-50">
+          {recentDeals.map((deal) => (
+            <div key={deal.id} className="px-5 py-3.5 flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: '#C41E2A' }} />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-gray-900 truncate">{deal.clients?.name ?? 'Unknown Client'}</p>
+                <p className="text-xs text-gray-400 truncate">{deal.property_address ?? 'No address'}</p>
+              </div>
+              <div className="flex flex-col items-end gap-1 ml-3 flex-shrink-0">
+                {stageBadge(deal.stage)}
+                <span className="text-xs text-gray-400">{formatDate(deal.updated_at)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
+  const role = useRole()
+
+  if (role === 'manager') {
+    return <ManagerDashboard />
+  }
+
   const dummyStats: Stats = {
     prospects: DUMMY_DEALS.filter((d) => d.stage === 'prospect').length,
     appointments: DUMMY_DEALS.filter((d) => d.stage === 'appointment').length,

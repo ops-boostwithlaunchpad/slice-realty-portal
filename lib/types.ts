@@ -56,3 +56,17 @@ export interface QuizQuestion {
   explanation: string | null
   category: string | null
 }
+
+export interface Agent {
+  id: string
+  name: string
+  email: string
+  phone: string
+  avatar_url: string | null
+  status: 'active' | 'inactive'
+  deals_closed: number
+  total_volume: number
+  commission_earned: number
+  active_clients: number
+  joined_at: string
+}

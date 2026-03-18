@@ -13,23 +13,29 @@ import {
   LogOut,
   Menu,
   X,
+  UserCog,
 } from 'lucide-react'
+import { useAuth, clearAuth, type UserRole } from '@/lib/auth'
 
-const navItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/pipeline', label: 'Pipeline', icon: Kanban },
-  { href: '/clients', label: 'Clients', icon: Users },
-  { href: '/listings', label: 'Listings', icon: Home },
-  { href: '/quiz', label: 'Quiz', icon: BookOpen },
+const allNavItems = [
+  { href: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['agent', 'manager'] as UserRole[] },
+  { href: '/pipeline', label: 'Pipeline', icon: Kanban, roles: ['agent', 'manager'] as UserRole[] },
+  { href: '/clients', label: 'Clients', icon: Users, roles: ['agent', 'manager'] as UserRole[] },
+  { href: '/listings', label: 'Listings', icon: Home, roles: ['agent', 'manager'] as UserRole[] },
+  { href: '/agents', label: 'Agents', icon: UserCog, roles: ['manager'] as UserRole[] },
+  { href: '/quiz', label: 'Quiz', icon: BookOpen, roles: ['agent'] as UserRole[] },
 ]
 
 export default function TopNavbar() {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { role, displayName } = useAuth()
+
+  const navItems = allNavItems.filter((item) => item.roles.includes(role))
 
   const handleLogout = () => {
-    localStorage.removeItem('slice_auth')
+    clearAuth()
     router.replace('/login')
   }
 
@@ -96,8 +102,20 @@ export default function TopNavbar() {
             </nav>
           </div>
 
-          {/* Right: Sign Out + Mobile Toggle */}
-          <div className="flex items-center gap-2">
+          {/* Right: User info + Sign Out + Mobile Toggle */}
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-2">
+              <span
+                className="text-xs font-medium px-2 py-1 rounded-full"
+                style={{
+                  color: role === 'manager' ? '#7C3AED' : '#C41E2A',
+                  backgroundColor: role === 'manager' ? '#F5F3FF' : '#FFF0F0',
+                }}
+              >
+                {role === 'manager' ? 'Manager' : 'Agent'}
+              </span>
+              <span className="text-sm text-gray-600 font-medium">{displayName}</span>
+            </div>
             <button
               onClick={handleLogout}
               className="hidden md:flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all border border-gray-200"
@@ -130,6 +148,19 @@ export default function TopNavbar() {
         {/* Mobile dropdown */}
         {mobileOpen && (
           <div className="md:hidden border-t border-gray-100 bg-white px-4 py-3 space-y-1">
+            {/* Mobile user info */}
+            <div className="flex items-center gap-2 px-3 pb-2 mb-2 border-b border-gray-100">
+              <span
+                className="text-xs font-medium px-2 py-1 rounded-full"
+                style={{
+                  color: role === 'manager' ? '#7C3AED' : '#C41E2A',
+                  backgroundColor: role === 'manager' ? '#F5F3FF' : '#FFF0F0',
+                }}
+              >
+                {role === 'manager' ? 'Manager' : 'Agent'}
+              </span>
+              <span className="text-sm text-gray-600 font-medium">{displayName}</span>
+            </div>
             {navItems.map(({ href, label, icon: Icon }) => {
               const isActive =
                 href === '/' ? pathname === '/' : pathname.startsWith(href)

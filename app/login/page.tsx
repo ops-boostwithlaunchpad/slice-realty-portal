@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-
-const CREDENTIALS = { username: 'silvia', password: '123' }
+import { USERS, storeAuth } from '@/lib/auth'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -19,11 +18,13 @@ export default function LoginPage() {
     setLoading(true)
 
     setTimeout(() => {
-      if (
-        form.username.trim() === CREDENTIALS.username &&
-        form.password === CREDENTIALS.password
-      ) {
-        localStorage.setItem('slice_auth', 'true')
+      const user = USERS[form.username.trim().toLowerCase()]
+      if (user && form.password === user.password) {
+        storeAuth({
+          username: form.username.trim().toLowerCase(),
+          role: user.role,
+          displayName: user.displayName,
+        })
         router.replace('/')
       } else {
         setError('Invalid username or password.')

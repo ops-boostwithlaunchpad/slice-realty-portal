@@ -13,23 +13,29 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  UserCog,
 } from 'lucide-react'
+import { useAuth, clearAuth, type UserRole } from '@/lib/auth'
 
-const navItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/pipeline', label: 'Pipeline', icon: Kanban },
-  { href: '/clients', label: 'Clients', icon: Users },
-  { href: '/listings', label: 'Listings', icon: Home },
-  { href: '/quiz', label: 'Quiz', icon: BookOpen },
+const allNavItems = [
+  { href: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['agent', 'manager'] as UserRole[] },
+  { href: '/pipeline', label: 'Pipeline', icon: Kanban, roles: ['agent', 'manager'] as UserRole[] },
+  { href: '/clients', label: 'Clients', icon: Users, roles: ['agent', 'manager'] as UserRole[] },
+  { href: '/listings', label: 'Listings', icon: Home, roles: ['agent', 'manager'] as UserRole[] },
+  { href: '/agents', label: 'Agents', icon: UserCog, roles: ['manager'] as UserRole[] },
+  { href: '/quiz', label: 'Quiz', icon: BookOpen, roles: ['agent'] as UserRole[] },
 ]
 
 export default function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
+  const { role } = useAuth()
+
+  const navItems = allNavItems.filter((item) => item.roles.includes(role))
 
   const handleLogout = () => {
-    localStorage.removeItem('slice_auth')
+    clearAuth()
     router.replace('/login')
   }
 

@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { Client, FollowUp } from '@/lib/types'
 import { DUMMY_CLIENTS, DUMMY_FOLLOW_UPS } from '@/lib/dummy'
 import { X, Plus } from 'lucide-react'
+import { useRole } from '@/lib/auth'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   prospect: { label: 'Prospect', color: '#C41E2A', bg: '#FFF0F0' },
@@ -27,10 +28,12 @@ function ClientDetailPanel({
   client,
   onClose,
   onUpdate,
+  readOnly,
 }: {
   client: Client
   onClose: () => void
   onUpdate: (updated: Client) => void
+  readOnly?: boolean
 }) {
   const [followUps, setFollowUps] = useState<FollowUp[]>([])
   const [newNote, setNewNote] = useState('')
@@ -107,16 +110,18 @@ function ClientDetailPanel({
           <div className="px-5 py-4 border-b border-gray-100">
             <div className="flex items-center justify-between mb-4">
               <StatusBadge status={status} />
-              <select
-                value={status}
-                onChange={(e) => updateStatus(e.target.value)}
-                disabled={savingStatus}
-                className="text-xs border border-gray-200 rounded-lg px-2 py-1 text-gray-600 focus:outline-none"
-              >
-                <option value="prospect">Prospect</option>
-                <option value="active">Active</option>
-                <option value="closed">Closed</option>
-              </select>
+              {!readOnly && (
+                <select
+                  value={status}
+                  onChange={(e) => updateStatus(e.target.value)}
+                  disabled={savingStatus}
+                  className="text-xs border border-gray-200 rounded-lg px-2 py-1 text-gray-600 focus:outline-none"
+                >
+                  <option value="prospect">Prospect</option>
+                  <option value="active">Active</option>
+                  <option value="closed">Closed</option>
+                </select>
+              )}
             </div>
 
             <div className="flex flex-col gap-3">
@@ -161,24 +166,26 @@ function ClientDetailPanel({
             <h3 className="text-sm font-bold text-gray-900 mb-3" style={{ fontFamily: 'var(--font-dm-serif)' }}>Follow-up Log</h3>
 
             {/* Add note */}
-            <div className="mb-4">
-              <textarea
-                value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
-                placeholder="Add a follow-up note..."
-                rows={3}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 resize-none focus:outline-none focus:border-red-300"
-              />
-              <button
-                onClick={addFollowUp}
-                disabled={addingNote || !newNote.trim()}
-                className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-white disabled:opacity-50 transition-opacity"
-                style={{ backgroundColor: '#C41E2A' }}
-              >
-                <Plus size={14} />
-                {addingNote ? 'Adding...' : 'Add Follow-up'}
-              </button>
-            </div>
+            {!readOnly && (
+              <div className="mb-4">
+                <textarea
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Add a follow-up note..."
+                  rows={3}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 resize-none focus:outline-none focus:border-red-300"
+                />
+                <button
+                  onClick={addFollowUp}
+                  disabled={addingNote || !newNote.trim()}
+                  className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-white disabled:opacity-50 transition-opacity"
+                  style={{ backgroundColor: '#C41E2A' }}
+                >
+                  <Plus size={14} />
+                  {addingNote ? 'Adding...' : 'Add Follow-up'}
+                </button>
+              </div>
+            )}
 
             {/* Log entries */}
             {loading ? (
@@ -219,6 +226,8 @@ function ClientDetailPanel({
 }
 
 export default function ClientsPage() {
+  const role = useRole()
+  const isReadOnly = role === 'manager'
   const [clients, setClients] = useState<Client[]>(DUMMY_CLIENTS)
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [search, setSearch] = useState('')
@@ -258,7 +267,9 @@ export default function ClientsPage() {
           >
             Clients
           </h1>
-          <p className="text-sm text-gray-500 mt-1">{clients.length} total clients</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {clients.length} total clients{isReadOnly ? ' (view-only)' : ''}
+          </p>
         </div>
         <input
           type="search"
@@ -349,6 +360,7 @@ export default function ClientsPage() {
           client={selectedClient}
           onClose={() => setSelectedClient(null)}
           onUpdate={handleUpdate}
+          readOnly={isReadOnly}
         />
       )}
     </div>

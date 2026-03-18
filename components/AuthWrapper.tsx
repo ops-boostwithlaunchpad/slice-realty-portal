@@ -3,16 +3,18 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import TopNavbar from './TopNavbar'
+import { AuthContext, AuthUser, getStoredAuth } from '@/lib/auth'
 
 export default function AuthWrapper({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const [checked, setChecked] = useState(false)
-  const [authed, setAuthed] = useState(false)
+  const [user, setUser] = useState<AuthUser | null>(null)
 
   useEffect(() => {
-    const isAuth = localStorage.getItem('slice_auth') === 'true'
-    setAuthed(isAuth)
+    const storedUser = getStoredAuth()
+    setUser(storedUser)
+    const isAuth = !!storedUser
     if (!isAuth && pathname !== '/login') {
       router.replace('/login')
     } else if (isAuth && pathname === '/login') {
@@ -27,14 +29,16 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
     return <>{children}</>
   }
 
-  if (!authed) return null
+  if (!user) return null
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-gray-50">
-      <TopNavbar />
-      <main className="flex-1 overflow-y-auto">
-        {children}
-      </main>
-    </div>
+    <AuthContext.Provider value={user}>
+      <div className="flex flex-col h-screen overflow-hidden bg-gray-50">
+        <TopNavbar />
+        <main className="flex-1 overflow-y-auto">
+          {children}
+        </main>
+      </div>
+    </AuthContext.Provider>
   )
 }

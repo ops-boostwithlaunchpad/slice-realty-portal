@@ -1,5 +1,5 @@
 // TODO: Remove dummy data once Supabase is seeded with real data
-import { Client, FollowUp, Deal, Listing, QuizQuestion } from './types'
+import { Client, FollowUp, Deal, Listing, QuizQuestion, Agent } from './types'
 
 export const DUMMY_CLIENTS: Client[] = [
   {
@@ -353,6 +353,61 @@ export const DUMMY_LISTINGS: Listing[] = [
     photo_url: 'https://picsum.photos/seed/salzedo-gables/600/400',
     agent_name: 'Sarah Johnson',
     created_at: '2025-09-20T15:00:00Z',
+  },
+]
+
+export const DUMMY_AGENTS: Agent[] = [
+  {
+    id: 'agent-1',
+    name: 'Silvia Martinez',
+    email: 'silvia@slicerealty.com',
+    phone: '(305) 555-0101',
+    avatar_url: null,
+    status: 'active',
+    deals_closed: 2,
+    total_volume: 698500,
+    commission_earned: 20955,
+    active_clients: 6,
+    joined_at: '2025-06-15T00:00:00Z',
+  },
+  {
+    id: 'agent-2',
+    name: 'Sarah Johnson',
+    email: 'sarah@slicerealty.com',
+    phone: '(305) 555-0202',
+    avatar_url: null,
+    status: 'active',
+    deals_closed: 5,
+    total_volume: 1850000,
+    commission_earned: 55500,
+    active_clients: 8,
+    joined_at: '2024-09-01T00:00:00Z',
+  },
+  {
+    id: 'agent-3',
+    name: 'Marcus Rivera',
+    email: 'marcus@slicerealty.com',
+    phone: '(786) 555-0303',
+    avatar_url: null,
+    status: 'active',
+    deals_closed: 3,
+    total_volume: 1120000,
+    commission_earned: 33600,
+    active_clients: 5,
+    joined_at: '2025-01-10T00:00:00Z',
+  },
+  {
+    id: 'agent-4',
+    name: 'Elena Vasquez',
+    email: 'elena@slicerealty.com',
+    phone: '(954) 555-0404',
+    avatar_url: null,
+    status: 'inactive',
+    deals_closed: 1,
+    total_volume: 310000,
+    commission_earned: 9300,
+    active_clients: 0,
+    joined_at: '2025-03-20T00:00:00Z',
   },
 ]
 

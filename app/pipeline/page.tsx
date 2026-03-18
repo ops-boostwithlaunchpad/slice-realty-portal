@@ -9,6 +9,7 @@ import {
 } from '@hello-pangea/dnd'
 import { Deal } from '@/lib/types'
 import { DUMMY_DEALS } from '@/lib/dummy'
+import { useRole } from '@/lib/auth'
 
 const STAGES = [
   { id: 'prospect', label: 'Prospects', color: '#2563EB', bg: '#EFF6FF' },
@@ -19,7 +20,7 @@ const STAGES = [
 
 type BoardData = Record<string, Deal[]>
 
-function DealCard({ deal, index }: { deal: Deal; index: number }) {
+function DealCard({ deal, index, readOnly }: { deal: Deal; index: number; readOnly?: boolean }) {
   const timeAgo = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime()
     const days = Math.floor(diff / 86400000)
@@ -28,6 +29,38 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
     if (days < 7) return `${days}d ago`
     if (days < 30) return `${Math.floor(days / 7)}w ago`
     return `${Math.floor(days / 30)}mo ago`
+  }
+
+  if (readOnly) {
+    return (
+      <div
+        className="bg-white rounded-xl border border-gray-100 p-3 mb-2"
+        style={{
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          borderLeft: '3px solid #C41E2A',
+        }}
+      >
+        <p className="text-sm font-bold text-gray-900 mb-1">
+          {deal.clients?.name ?? 'Unknown Client'}
+        </p>
+        {deal.property_address && (
+          <p className="text-xs text-gray-400 leading-tight mb-1.5">{deal.property_address}</p>
+        )}
+        {deal.notes && (
+          <div className="mb-1.5 rounded-lg px-2.5 py-1.5" style={{ backgroundColor: '#F9FAFB' }}>
+            <p className="text-xs text-gray-500 leading-tight line-clamp-2">{deal.notes}</p>
+          </div>
+        )}
+        <div className="flex items-center justify-between mt-1.5">
+          <span className="text-xs text-gray-400">{(() => { const diff = Date.now() - new Date(deal.updated_at).getTime(); const days = Math.floor(diff / 86400000); if (days === 0) return 'Today'; if (days === 1) return 'Yesterday'; if (days < 7) return `${days}d ago`; if (days < 30) return `${Math.floor(days / 7)}w ago`; return `${Math.floor(days / 30)}mo ago`; })()}</span>
+          {deal.offer_amount && (
+            <span className="text-xs font-semibold" style={{ color: '#C41E2A' }}>
+              ${deal.offer_amount.toLocaleString()}
+            </span>
+          )}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -90,6 +123,8 @@ function buildBoard(deals: Deal[]): BoardData {
 }
 
 export default function PipelinePage() {
+  const role = useRole()
+  const isReadOnly = role === 'manager'
   const [board, setBoard] = useState<BoardData>(buildBoard(DUMMY_DEALS))
 
   const onDragEnd = (result: DropResult) => {
@@ -128,11 +163,40 @@ export default function PipelinePage() {
           Pipeline
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          Drag cards between columns to update deal stages
+          {isReadOnly ? 'Viewing all agent deals (read-only)' : 'Drag cards between columns to update deal stages'}
         </p>
       </div>
 
-      <DragDropContext onDragEnd={onDragEnd}>
+      {isReadOnly ? (
+          <div className="flex gap-4 flex-1 overflow-x-auto pb-2">
+            {STAGES.map((stage) => (
+              <div
+                key={stage.id}
+                className="flex flex-col rounded-2xl flex-1 min-w-[240px]"
+                style={{ backgroundColor: '#F8F8F7', border: '1px solid #EBEBEB' }}
+              >
+                <div className="px-3 pt-3 pb-2 flex items-center justify-between flex-shrink-0">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: stage.color }} />
+                    <span className="text-sm font-semibold text-gray-800">{stage.label}</span>
+                  </div>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: stage.bg, color: stage.color }}>
+                    {board[stage.id]?.length ?? 0}
+                  </span>
+                </div>
+                <div className="flex-1 px-2 pb-2 overflow-y-auto" style={{ minHeight: 100, borderRadius: '0 0 16px 16px' }}>
+                  {board[stage.id]?.map((deal, index) => (
+                    <DealCard key={deal.id} deal={deal} index={index} readOnly />
+                  ))}
+                  {board[stage.id]?.length === 0 && (
+                    <div className="flex items-center justify-center h-20 text-xs text-gray-400">No deals</div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+        <DragDropContext onDragEnd={onDragEnd}>
           <div className="flex gap-4 flex-1 overflow-x-auto pb-2">
             {STAGES.map((stage) => (
               <div
@@ -190,6 +254,7 @@ export default function PipelinePage() {
             ))}
           </div>
         </DragDropContext>
+        )}
     </div>
   )
 }
