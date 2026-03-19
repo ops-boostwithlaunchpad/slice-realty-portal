@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from 'react'
 
-export type UserRole = 'agent' | 'manager'
+export type UserRole = 'agent' | 'manager' | 'admin'
 
 export interface AuthUser {
   username: string
@@ -11,7 +11,7 @@ export interface AuthUser {
 }
 
 export const USERS: Record<string, { password: string; role: UserRole; displayName: string }> = {
-  silvia: { password: '123', role: 'agent', displayName: 'Silvia Martinez' },
+  silvia: { password: '123', role: 'admin', displayName: 'Silvia Martinez' },
   manager: { password: '123', role: 'manager', displayName: 'Carlos Reyes' },
 }
 

@@ -18,11 +18,11 @@ import {
 import { useAuth, clearAuth, type UserRole } from '@/lib/auth'
 
 const allNavItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['agent', 'manager'] as UserRole[] },
-  { href: '/pipeline', label: 'Pipeline', icon: Kanban, roles: ['agent', 'manager'] as UserRole[] },
-  { href: '/clients', label: 'Clients', icon: Users, roles: ['agent', 'manager'] as UserRole[] },
-  { href: '/listings', label: 'Listings', icon: Home, roles: ['agent', 'manager'] as UserRole[] },
-  { href: '/agents', label: 'Agents', icon: UserCog, roles: ['manager'] as UserRole[] },
+  { href: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['agent', 'manager', 'admin'] as UserRole[] },
+  { href: '/pipeline', label: 'Pipeline', icon: Kanban, roles: ['agent', 'manager', 'admin'] as UserRole[] },
+  { href: '/clients', label: 'Clients', icon: Users, roles: ['agent', 'manager', 'admin'] as UserRole[] },
+  { href: '/listings', label: 'Listings', icon: Home, roles: ['agent', 'manager', 'admin'] as UserRole[] },
+  { href: '/agents', label: 'Agents', icon: UserCog, roles: ['manager', 'admin'] as UserRole[] },
   { href: '/quiz', label: 'Quiz', icon: BookOpen, roles: ['agent'] as UserRole[] },
 ]
 
@@ -108,11 +108,11 @@ export default function TopNavbar() {
               <span
                 className="text-xs font-medium px-2 py-1 rounded-full"
                 style={{
-                  color: role === 'manager' ? '#7C3AED' : '#C41E2A',
-                  backgroundColor: role === 'manager' ? '#F5F3FF' : '#FFF0F0',
+                  color: role === 'admin' ? '#0369A1' : role === 'manager' ? '#7C3AED' : '#C41E2A',
+                  backgroundColor: role === 'admin' ? '#F0F9FF' : role === 'manager' ? '#F5F3FF' : '#FFF0F0',
                 }}
               >
-                {role === 'manager' ? 'Manager' : 'Agent'}
+                {role === 'admin' ? 'Admin' : role === 'manager' ? 'Manager' : 'Agent'}
               </span>
               <span className="text-sm text-gray-600 font-medium">{displayName}</span>
             </div>
@@ -153,11 +153,11 @@ export default function TopNavbar() {
               <span
                 className="text-xs font-medium px-2 py-1 rounded-full"
                 style={{
-                  color: role === 'manager' ? '#7C3AED' : '#C41E2A',
-                  backgroundColor: role === 'manager' ? '#F5F3FF' : '#FFF0F0',
+                  color: role === 'admin' ? '#0369A1' : role === 'manager' ? '#7C3AED' : '#C41E2A',
+                  backgroundColor: role === 'admin' ? '#F0F9FF' : role === 'manager' ? '#F5F3FF' : '#FFF0F0',
                 }}
               >
-                {role === 'manager' ? 'Manager' : 'Agent'}
+                {role === 'admin' ? 'Admin' : role === 'manager' ? 'Manager' : 'Agent'}
               </span>
               <span className="text-sm text-gray-600 font-medium">{displayName}</span>
             </div>
