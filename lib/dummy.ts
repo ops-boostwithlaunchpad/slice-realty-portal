@@ -1,5 +1,5 @@
 // TODO: Remove dummy data once Supabase is seeded with real data
-import { Client, FollowUp, Deal, Listing, QuizQuestion, Agent } from './types'
+import { Client, FollowUp, Deal, Listing, QuizQuestion, Agent, Notification } from './types'
 
 export const DUMMY_CLIENTS: Client[] = [
   {
@@ -551,5 +551,172 @@ export const DUMMY_QUIZ_QUESTIONS: QuizQuestion[] = [
     correct_index: 1,
     explanation: 'An exclusive agency listing allows the seller to sell the property on their own without owing a commission, while still giving the broker exclusive rights otherwise.',
     category: 'contracts',
+  },
+]
+
+export const DUMMY_NOTIFICATIONS: Notification[] = [
+  // --- Overdue follow-ups (urgent) ---
+  {
+    id: 'notif-1',
+    type: 'follow_up_overdue',
+    title: 'Overdue: Sofia Ramirez',
+    message: 'No follow-up in 6 days. She\'s a first-time buyer — don\'t let her go cold.',
+    read: false,
+    created_at: '2026-03-20T08:00:00Z',
+    visibility: ['broker', 'admin'],
+    href: '/clients',
+    related_name: 'Sofia Ramirez',
+  },
+  {
+    id: 'notif-2',
+    type: 'follow_up_overdue',
+    title: 'Overdue: David Park',
+    message: 'Last contact was 9 days ago. He wanted a 2nd showing with his architect.',
+    read: false,
+    created_at: '2026-03-20T07:30:00Z',
+    visibility: ['broker', 'admin'],
+    href: '/clients',
+    related_name: 'David Park',
+  },
+  {
+    id: 'notif-14',
+    type: 'follow_up_overdue',
+    title: 'Team alert: 2 overdue follow-ups',
+    message: 'Sofia Ramirez (6 days) and David Park (9 days) haven\'t been contacted. Review team activity.',
+    read: false,
+    created_at: '2026-03-20T08:15:00Z',
+    visibility: ['admin'],
+    href: '/clients',
+  },
+
+  // --- Upcoming follow-ups ---
+  {
+    id: 'notif-3',
+    type: 'follow_up_due',
+    title: 'Follow up with Jennifer Thompson',
+    message: 'She sent her wish list 13 days ago. Time to share matched listings.',
+    read: false,
+    created_at: '2026-03-19T09:00:00Z',
+    visibility: ['broker', 'admin'],
+    href: '/clients',
+    related_name: 'Jennifer Thompson',
+  },
+
+  // --- Appointment reminders ---
+  {
+    id: 'notif-4',
+    type: 'appointment_reminder',
+    title: 'Showing tomorrow at 2:00 PM',
+    message: '880 S Bayshore Dr — David Park\'s 2nd showing with architect.',
+    read: false,
+    created_at: '2026-03-18T17:00:00Z',
+    visibility: ['broker', 'admin'],
+    href: '/pipeline',
+    related_name: 'David Park',
+  },
+  {
+    id: 'notif-5',
+    type: 'appointment_reminder',
+    title: 'Showing scheduled: James Anderson',
+    message: '750 Granada Blvd — March 17 at 10:00 AM. Pre-approved up to $1.15M.',
+    read: true,
+    created_at: '2026-03-16T09:00:00Z',
+    visibility: ['broker', 'admin'],
+    href: '/pipeline',
+    related_name: 'James Anderson',
+  },
+
+  // --- Deal stage changes ---
+  {
+    id: 'notif-6',
+    type: 'deal_stage_change',
+    title: 'Deal moved to Pending',
+    message: 'Linda Chen\'s deal at 1200 Brickell Ave is now under contract at $672K.',
+    read: false,
+    created_at: '2026-03-13T16:05:00Z',
+    visibility: ['broker', 'admin'],
+    href: '/pipeline',
+    related_name: 'Linda Chen',
+  },
+  {
+    id: 'notif-7',
+    type: 'deal_stage_change',
+    title: 'New appointment set',
+    message: 'James Anderson — 2nd showing at 750 Granada Blvd scheduled for March 17.',
+    read: true,
+    created_at: '2026-03-10T09:05:00Z',
+    visibility: ['broker', 'admin'],
+    href: '/pipeline',
+    related_name: 'James Anderson',
+  },
+
+  // --- New clients ---
+  {
+    id: 'notif-8',
+    type: 'new_client',
+    title: 'New lead: Jennifer Thompson',
+    message: 'Referral from Dr. Patel — physician relocating from NYC. Budget $600K–$850K.',
+    read: true,
+    created_at: '2026-03-05T08:35:00Z',
+    visibility: ['broker', 'admin'],
+    href: '/clients',
+    related_name: 'Jennifer Thompson',
+  },
+  {
+    id: 'notif-9',
+    type: 'new_client',
+    title: 'New lead: Sofia Ramirez',
+    message: 'Realtor.com inquiry. First-time buyer, pre-approved $480K. Kendall/Doral area.',
+    read: true,
+    created_at: '2026-02-28T10:05:00Z',
+    visibility: ['broker', 'admin'],
+    href: '/clients',
+    related_name: 'Sofia Ramirez',
+  },
+
+  // --- Commission received ---
+  {
+    id: 'notif-10',
+    type: 'commission_received',
+    title: 'Commission received: $11,655',
+    message: 'Robert Williams — 3201 NE 183rd St, Aventura. Closed Jan 15.',
+    read: true,
+    created_at: '2026-01-17T10:00:00Z',
+    visibility: ['broker', 'admin'],
+    href: '/pipeline',
+    related_name: 'Robert Williams',
+  },
+  {
+    id: 'notif-11',
+    type: 'commission_received',
+    title: 'Commission received: $9,300',
+    message: 'Michael Brown — 247 W 68th St, Hialeah. Closed Dec 20.',
+    read: true,
+    created_at: '2025-12-22T10:00:00Z',
+    visibility: ['broker', 'admin'],
+    href: '/pipeline',
+    related_name: 'Michael Brown',
+  },
+
+  // --- System ---
+  {
+    id: 'notif-12',
+    type: 'system',
+    title: 'Quiz updated: 5 new questions',
+    message: 'New disclosure and contract law questions added to the FL exam prep.',
+    read: true,
+    created_at: '2026-03-01T12:00:00Z',
+    visibility: ['broker'],
+    href: '/quiz',
+  },
+  {
+    id: 'notif-13',
+    type: 'system',
+    title: 'Welcome to Slice Realty Portal',
+    message: 'Your dashboard is ready. Start by reviewing your pipeline and active clients.',
+    read: true,
+    created_at: '2025-06-15T00:00:00Z',
+    visibility: ['broker', 'admin'],
+    href: '/',
   },
 ]

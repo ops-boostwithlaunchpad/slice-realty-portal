@@ -91,8 +91,8 @@ export default function AgentsPage() {
   const [agents] = useState<Agent[]>(DUMMY_AGENTS)
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all')
 
-  // Only managers and admins can access this page
-  if (role !== 'manager' && role !== 'admin') {
+  // Only admin (CEO) can access this page
+  if (role !== 'admin') {
     router.replace('/')
     return null
   }

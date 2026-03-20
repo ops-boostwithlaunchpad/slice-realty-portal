@@ -16,14 +16,15 @@ import {
   UserCog,
 } from 'lucide-react'
 import { useAuth, clearAuth, type UserRole } from '@/lib/auth'
+import NotificationDropdown from './NotificationDropdown'
 
 const allNavItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['agent', 'manager', 'admin'] as UserRole[] },
-  { href: '/pipeline', label: 'Pipeline', icon: Kanban, roles: ['agent', 'manager', 'admin'] as UserRole[] },
-  { href: '/clients', label: 'Clients', icon: Users, roles: ['agent', 'manager', 'admin'] as UserRole[] },
-  { href: '/listings', label: 'Listings', icon: Home, roles: ['agent', 'manager', 'admin'] as UserRole[] },
-  { href: '/agents', label: 'Agents', icon: UserCog, roles: ['manager', 'admin'] as UserRole[] },
-  { href: '/quiz', label: 'Quiz', icon: BookOpen, roles: ['agent'] as UserRole[] },
+  { href: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['broker', 'admin'] as UserRole[] },
+  { href: '/pipeline', label: 'Pipeline', icon: Kanban, roles: ['broker', 'admin'] as UserRole[] },
+  { href: '/clients', label: 'Clients', icon: Users, roles: ['broker', 'admin'] as UserRole[] },
+  { href: '/listings', label: 'Listings', icon: Home, roles: ['broker', 'admin'] as UserRole[] },
+  { href: '/agents', label: 'Agents', icon: UserCog, roles: ['admin'] as UserRole[] },
+  { href: '/quiz', label: 'Quiz', icon: BookOpen, roles: ['broker'] as UserRole[] },
 ]
 
 export default function TopNavbar() {
@@ -102,17 +103,21 @@ export default function TopNavbar() {
             </nav>
           </div>
 
-          {/* Right: User info + Sign Out + Mobile Toggle */}
+          {/* Right: Notifications + User info + Sign Out + Mobile Toggle */}
           <div className="flex items-center gap-3">
+            {/* Notification Bell */}
+            <div className="hidden md:block">
+              <NotificationDropdown />
+            </div>
             <div className="hidden md:flex items-center gap-2">
               <span
                 className="text-xs font-medium px-2 py-1 rounded-full"
                 style={{
-                  color: role === 'admin' ? '#0369A1' : role === 'manager' ? '#7C3AED' : '#C41E2A',
-                  backgroundColor: role === 'admin' ? '#F0F9FF' : role === 'manager' ? '#F5F3FF' : '#FFF0F0',
+                  color: role === 'admin' ? '#0369A1' : '#C41E2A',
+                  backgroundColor: role === 'admin' ? '#F0F9FF' : '#FFF0F0',
                 }}
               >
-                {role === 'admin' ? 'Admin' : role === 'manager' ? 'Manager' : 'Agent'}
+                {role === 'admin' ? 'Admin' : 'Broker'}
               </span>
               <span className="text-sm text-gray-600 font-medium">{displayName}</span>
             </div>
@@ -135,7 +140,10 @@ export default function TopNavbar() {
               <span>Sign Out</span>
             </button>
 
-            {/* Mobile hamburger */}
+            {/* Mobile notification + hamburger */}
+            <div className="md:hidden">
+              <NotificationDropdown />
+            </div>
             <button
               className="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
@@ -153,11 +161,11 @@ export default function TopNavbar() {
               <span
                 className="text-xs font-medium px-2 py-1 rounded-full"
                 style={{
-                  color: role === 'admin' ? '#0369A1' : role === 'manager' ? '#7C3AED' : '#C41E2A',
-                  backgroundColor: role === 'admin' ? '#F0F9FF' : role === 'manager' ? '#F5F3FF' : '#FFF0F0',
+                  color: role === 'admin' ? '#0369A1' : '#C41E2A',
+                  backgroundColor: role === 'admin' ? '#F0F9FF' : '#FFF0F0',
                 }}
               >
-                {role === 'admin' ? 'Admin' : role === 'manager' ? 'Manager' : 'Agent'}
+                {role === 'admin' ? 'Admin' : 'Broker'}
               </span>
               <span className="text-sm text-gray-600 font-medium">{displayName}</span>
             </div>

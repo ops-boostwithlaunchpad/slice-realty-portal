@@ -70,3 +70,27 @@ export interface Agent {
   active_clients: number
   joined_at: string
 }
+
+export type NotificationType =
+  | 'follow_up_overdue'
+  | 'follow_up_due'
+  | 'deal_stage_change'
+  | 'new_client'
+  | 'appointment_reminder'
+  | 'commission_received'
+  | 'system'
+
+export interface Notification {
+  id: string
+  type: NotificationType
+  title: string
+  message: string
+  read: boolean
+  created_at: string
+  /** Which roles can see this notification */
+  visibility: ('broker' | 'admin')[]
+  /** Optional link target */
+  href?: string
+  /** Client or agent name associated */
+  related_name?: string
+}

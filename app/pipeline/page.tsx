@@ -124,7 +124,7 @@ function buildBoard(deals: Deal[]): BoardData {
 
 export default function PipelinePage() {
   const role = useRole()
-  const isReadOnly = role === 'manager'
+  const isReadOnly = false // Both broker and admin have full pipeline access
   const [board, setBoard] = useState<BoardData>(buildBoard(DUMMY_DEALS))
 
   const onDragEnd = (result: DropResult) => {

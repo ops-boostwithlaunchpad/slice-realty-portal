@@ -227,7 +227,7 @@ function ClientDetailPanel({
 
 export default function ClientsPage() {
   const role = useRole()
-  const isReadOnly = role === 'manager'
+  const isReadOnly = false // Both broker and admin have full client access
   const [clients, setClients] = useState<Client[]>(DUMMY_CLIENTS)
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [search, setSearch] = useState('')

@@ -556,7 +556,7 @@ function ManagerDashboard() {
 export default function DashboardPage() {
   const role = useRole()
 
-  if (role === 'manager' || role === 'admin') {
+  if (role === 'admin') {
     return <ManagerDashboard />
   }
 
